@@ -1,0 +1,220 @@
+import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import type { LearnerProfile } from '../../types';
+
+const NODE_BASE_RADIUS = 8;
+const SVG_PADDING = 40;
+
+interface ConnectionLine {
+  id: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  delay: number;
+}
+
+export default function ConstellationCard({ profile }: { profile: LearnerProfile }) {
+  const nodes = profile.topicConnections;
+  const [linesComplete, setLinesComplete] = useState(false);
+
+  // Build unique connection lines
+  const connections = useMemo(() => {
+    const lines: ConnectionLine[] = [];
+    const seen = new Set<string>();
+    let lineIndex = 0;
+
+    nodes.forEach((node) => {
+      node.connections.forEach((targetId) => {
+        const key = [node.id, targetId].sort().join('-');
+        if (seen.has(key)) return;
+        seen.add(key);
+
+        const target = nodes.find((n) => n.id === targetId);
+        if (!target) return;
+
+        lines.push({
+          id: key,
+          x1: node.x,
+          y1: node.y,
+          x2: target.x,
+          y2: target.y,
+          delay: lineIndex * 0.4,
+        });
+        lineIndex++;
+      });
+    });
+
+    return lines;
+  }, [nodes]);
+
+  const totalNodeAnimDuration = nodes.length * 0.2;
+  const totalLineAnimDuration = connections.length * 0.4 + 0.4;
+  const lineStartDelay = totalNodeAnimDuration + 0.3;
+
+  // Build a readable journey string from first 3 nodes
+  const journeyText = useMemo(() => {
+    const labels = nodes.slice(0, 3).map((n) => n.label);
+    if (labels.length < 3) return `Your learning journey is building something.`;
+    return `From ${labels[0]} to ${labels[1]} to ${labels[2]}. You're building something.`;
+  }, [nodes]);
+
+  return (
+    <div
+      className="flex flex-col items-center justify-center w-full h-full px-6 overflow-hidden relative"
+      style={{
+        background:
+          'radial-gradient(ellipse at center, var(--cds-color-grey-900, #2A2A2A) 0%, var(--cds-color-grey-950, #1F1F1F) 70%)',
+      }}
+      role="region"
+      aria-label={`Your knowledge constellation: ${nodes.map((n) => n.label).join(', ')}`}
+    >
+      {/* Constellation SVG */}
+      <svg
+        viewBox={`0 0 ${100 + SVG_PADDING * 2} ${100 + SVG_PADDING * 2}`}
+        className="w-full"
+        style={{ height: '60vh', maxHeight: '60vh' }}
+        aria-hidden="true"
+      >
+        {/* Connection lines */}
+        {connections.map((conn, i) => {
+          const isLast = i === connections.length - 1;
+          const x1 = conn.x1 * 100 + SVG_PADDING;
+          const y1 = conn.y1 * 100 + SVG_PADDING;
+          const x2 = conn.x2 * 100 + SVG_PADDING;
+          const y2 = conn.y2 * 100 + SVG_PADDING;
+          const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+          return (
+            <motion.line
+              key={conn.id}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke="var(--cds-color-grey-600, #757575)"
+              strokeWidth="0.5"
+              strokeDasharray={length}
+              initial={{ strokeDashoffset: length, opacity: 0 }}
+              animate={{ strokeDashoffset: 0, opacity: 0.6 }}
+              transition={{
+                strokeDashoffset: {
+                  duration: 0.4,
+                  delay: lineStartDelay + conn.delay,
+                  ease: 'easeInOut',
+                },
+                opacity: {
+                  duration: 0.05,
+                  delay: lineStartDelay + conn.delay,
+                },
+              }}
+              onAnimationComplete={
+                isLast ? () => setLinesComplete(true) : undefined
+              }
+            />
+          );
+        })}
+
+        {/* Nodes */}
+        {nodes.map((node, i) => {
+          const cx = node.x * 100 + SVG_PADDING;
+          const cy = node.y * 100 + SVG_PADDING;
+          const r = NODE_BASE_RADIUS * node.size * 0.08;
+          const nodeDelay = i * 0.2;
+          const floatDelay = i * 0.5;
+
+          return (
+            <g key={node.id}>
+              {/* Node circle */}
+              <motion.circle
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill="var(--cds-color-blue-500, #3D82F3)"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={
+                  linesComplete
+                    ? {
+                        scale: 1,
+                        opacity: 1,
+                        cx: [cx, cx + 2, cx - 1, cx + 1, cx],
+                        cy: [cy, cy - 2, cy + 1.5, cy - 1, cy],
+                      }
+                    : { scale: 1, opacity: 1 }
+                }
+                transition={
+                  linesComplete
+                    ? {
+                        cx: {
+                          duration: 6 + floatDelay * 0.3,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        },
+                        cy: {
+                          duration: 7 + floatDelay * 0.3,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        },
+                        scale: { duration: 0.3, delay: nodeDelay },
+                        opacity: { duration: 0.3, delay: nodeDelay },
+                      }
+                    : {
+                        scale: { duration: 0.3, delay: nodeDelay },
+                        opacity: { duration: 0.3, delay: nodeDelay },
+                      }
+                }
+              />
+
+              {/* Glow around node */}
+              <motion.circle
+                cx={cx}
+                cy={cy}
+                r={r + 3}
+                fill="none"
+                stroke="var(--cds-color-blue-500, #3D82F3)"
+                strokeWidth="0.3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.3 }}
+                transition={{ duration: 0.4, delay: nodeDelay + 0.2 }}
+              />
+
+              {/* Node label */}
+              <motion.text
+                x={cx}
+                y={cy + r + 6}
+                textAnchor="middle"
+                dominantBaseline="hanging"
+                fill="white"
+                fontSize="4"
+                fontWeight="500"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: nodeDelay + 0.15 }}
+              >
+                {node.label}
+              </motion.text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Journey text */}
+      <motion.p
+        className="text-center mt-6 select-none px-4"
+        style={{
+          fontSize: 16,
+          color: 'var(--cds-color-blue-300, #79A8F7)',
+          fontWeight: 400,
+          lineHeight: 1.6,
+        }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={
+          linesComplete ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }
+        }
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+      >
+        {journeyText}
+      </motion.p>
+    </div>
+  );
+}
