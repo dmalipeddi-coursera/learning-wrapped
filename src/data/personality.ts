@@ -1,0 +1,34 @@
+import type { LearningPersonality, PersonalityInfo } from '../types';
+
+export const personalities: Record<LearningPersonality, PersonalityInfo> = {
+  'Night Owl': {
+    type: 'Night Owl',
+    description: 'You come alive when the world goes quiet. Late nights are your learning sweet spot.',
+    icon: 'owl',
+  },
+  'Early Bird': {
+    type: 'Early Bird',
+    description: 'First light, first lesson. You start learning before most people hit snooze.',
+    icon: 'sunrise',
+  },
+  'Weekend Warrior': {
+    type: 'Weekend Warrior',
+    description: 'Saturdays and Sundays are your classroom. You go deep when the week lets go.',
+    icon: 'shield',
+  },
+  'Steady Learner': {
+    type: 'Steady Learner',
+    description: 'Consistent and relentless. A little every day, and it all adds up.',
+    icon: 'wave',
+  },
+  'Sprint Master': {
+    type: 'Sprint Master',
+    description: 'You learn in intense bursts of focus. When you lock in, nothing stops you.',
+    icon: 'bolt',
+  },
+  'The Explorer': {
+    type: 'The Explorer',
+    description: 'Curiosity drives you. You sample, discover, and connect ideas across domains.',
+    icon: 'compass',
+  },
+};
