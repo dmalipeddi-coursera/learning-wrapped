@@ -1,4 +1,4 @@
-import{r as l,j as t,m as o}from"./index-S0z0mx9P.js";import{u as d}from"./useAnimatedCounter-CSVzHGJs.js";const c="funstat-orbit-style";if(typeof document<"u"&&!document.getElementById(c)){const a=document.createElement("style");a.id=c,a.textContent=`
+import{r as l,j as t,m as o}from"./index-CEnG701G.js";import{u as d}from"./useAnimatedCounter-CCpnvaYU.js";const c="funstat-orbit-style";if(typeof document<"u"&&!document.getElementById(c)){const a=document.createElement("style");a.id=c,a.textContent=`
     @keyframes funstat-orbit {
       0% { transform: translate(-50%, -50%) rotate(0deg); }
       100% { transform: translate(-50%, -50%) rotate(360deg); }
