@@ -42,7 +42,7 @@ export default function FunStatCard({ profile }: { profile: LearnerProfile }) {
         {value.toLocaleString()}
       </motion.div>
 
-      {/* Label */}
+      {/* Label with emoji */}
       <motion.p
         className="relative z-10 mt-4 select-none"
         style={{
@@ -54,7 +54,7 @@ export default function FunStatCard({ profile }: { profile: LearnerProfile }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.4, ease: 'easeOut' }}
       >
-        quiz answers submitted
+        <span role="img" aria-label="brain">🧠</span> quiz answers submitted
       </motion.p>
 
       {/* Fun comparison text */}
@@ -63,7 +63,6 @@ export default function FunStatCard({ profile }: { profile: LearnerProfile }) {
         style={{
           fontSize: 18,
           color: 'var(--cds-color-grey-300, #BDBDBD)',
-          fontStyle: 'italic',
           lineHeight: 1.5,
         }}
         initial={{ opacity: 0, scale: 0.95 }}

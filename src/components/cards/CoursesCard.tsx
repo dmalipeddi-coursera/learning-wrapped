@@ -1,6 +1,19 @@
 import { motion } from 'framer-motion';
 import type { LearnerProfile } from '../../types';
 
+const CATEGORY_COLORS: Record<string, string> = {
+  'AI & ML': '#3D82F3',
+  'Programming': '#00897B',
+  'Data Science': '#7B1FA2',
+  'Databases': '#E65100',
+  'Cloud': '#0097A7',
+  'Management': '#558B2F',
+};
+
+function getCategoryColor(category: string): string {
+  return CATEGORY_COLORS[category] || 'var(--cds-color-blue-500, #3D82F3)';
+}
+
 function CheckmarkIcon({ delay }: { delay: number }) {
   return (
     <svg
@@ -33,31 +46,46 @@ export default function CoursesCard({ profile }: { profile: LearnerProfile }) {
 
   return (
     <div
-      className="flex flex-col w-full h-full px-6 py-12 overflow-hidden"
+      className="flex flex-col items-center justify-center w-full h-full px-6 overflow-hidden"
       style={{ backgroundColor: 'var(--cds-color-grey-950, #1F1F1F)' }}
       role="region"
       aria-label={`${profile.coursesCompleted} courses completed`}
     >
       {/* Header */}
-      <motion.p
-        className="mb-8 select-none"
-        style={{
-          fontSize: 20,
-          color: 'var(--cds-color-blue-300, #79A8F7)',
-          fontWeight: 500,
-        }}
+      <motion.div
+        className="mb-8 self-start select-none"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {profile.coursesCompleted} courses completed
-      </motion.p>
+        <p
+          style={{
+            fontSize: 22,
+            color: 'white',
+            fontWeight: 700,
+            lineHeight: 1.3,
+          }}
+        >
+          Look what you built
+        </p>
+        <p
+          style={{
+            fontSize: 15,
+            color: 'var(--cds-color-blue-300, #79A8F7)',
+            fontWeight: 400,
+            marginTop: 4,
+          }}
+        >
+          {profile.coursesCompleted} courses completed this year
+        </p>
+      </motion.div>
 
       {/* Course list */}
-      <div className="flex flex-col gap-4 flex-1 justify-center">
+      <div className="flex flex-col gap-4 w-full">
         {courses.map((course, i) => {
           const slideDelay = i * 0.15;
           const checkDelay = slideDelay + 0.4;
+          const categoryColor = getCategoryColor(course.category);
 
           return (
             <motion.div
@@ -74,20 +102,24 @@ export default function CoursesCard({ profile }: { profile: LearnerProfile }) {
             >
               <CheckmarkIcon delay={checkDelay} />
 
-              <div className="flex items-baseline gap-3 min-w-0 flex-1">
+              <div className="flex flex-col min-w-0 flex-1 gap-1">
                 <span
                   className="text-white truncate"
-                  style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.4 }}
+                  style={{ fontSize: 15, fontWeight: 500, lineHeight: 1.3 }}
                 >
                   {course.name}
                 </span>
 
                 <span
-                  className="shrink-0 whitespace-nowrap"
+                  className="self-start shrink-0 whitespace-nowrap"
                   style={{
-                    fontSize: 12,
-                    color: 'var(--cds-color-grey-400, #9E9E9E)',
-                    fontWeight: 400,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: categoryColor,
+                    backgroundColor: `${categoryColor}18`,
+                    padding: '2px 8px',
+                    borderRadius: 10,
+                    lineHeight: 1.4,
                   }}
                 >
                   {course.category}

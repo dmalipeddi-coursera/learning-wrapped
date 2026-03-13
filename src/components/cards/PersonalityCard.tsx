@@ -295,9 +295,19 @@ const personalitySVGs: Record<LearningPersonality, () => JSX.Element> = {
   'Steady Learner': SteadyLearnerSVG,
 };
 
+const PERSONALITY_RARITY: Record<LearningPersonality, number> = {
+  'Night Owl': 22,
+  'Early Bird': 18,
+  'Weekend Warrior': 12,
+  'Sprint Master': 15,
+  'The Explorer': 8,
+  'Steady Learner': 25,
+};
+
 export default function PersonalityCard({ profile }: { profile: LearnerProfile }) {
   const personalityInfo = personalities[profile.personality];
   const SVGComponent = personalitySVGs[profile.personality];
+  const rarityPercent = PERSONALITY_RARITY[profile.personality];
 
   return (
     <div
@@ -353,6 +363,27 @@ export default function PersonalityCard({ profile }: { profile: LearnerProfile }
       >
         {personalityInfo.description}
       </motion.p>
+
+      {/* Rarity badge */}
+      <motion.div
+        className="relative z-10 mt-5 select-none"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '6px 14px',
+          borderRadius: 20,
+          backgroundColor: 'rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(8px)',
+        }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: DRAW_DURATION + FILL_DURATION + 0.5, duration: 0.4, ease: 'easeOut' }}
+      >
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+          You + {rarityPercent}% of learners
+        </span>
+      </motion.div>
     </div>
   );
 }

@@ -1,12 +1,24 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { StoryState, LearnerProfile, StoryCardConfig } from '../types';
 
 interface UseStoryOptions {
   profile: LearnerProfile;
   cards: StoryCardConfig[];
+  onExit?: () => void;
+  onCardChange?: (index: number, total: number) => void;
 }
 
-export function useStory({ profile, cards }: UseStoryOptions) {
+/**
+ * Check if the user prefers reduced motion.
+ * Returns true if the user has enabled reduced motion in their OS settings.
+ */
+function getPrefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  return mediaQuery.matches;
+}
+
+export function useStory({ profile, cards, onExit, onCardChange }: UseStoryOptions) {
   const [state, setState] = useState<StoryState>({
     currentIndex: 0,
     direction: 1,
@@ -15,6 +27,8 @@ export function useStory({ profile, cards }: UseStoryOptions) {
     isComplete: false,
   });
 
+  const prefersReducedMotion = useMemo(() => getPrefersReducedMotion(), []);
+
   const totalCards = cards.length;
 
   const goNext = useCallback(() => {
@@ -22,9 +36,10 @@ export function useStory({ profile, cards }: UseStoryOptions) {
       if (prev.currentIndex >= totalCards - 1) {
         return { ...prev, isComplete: true };
       }
+      const nextIndex = prev.currentIndex + 1;
       return {
         ...prev,
-        currentIndex: prev.currentIndex + 1,
+        currentIndex: nextIndex,
         direction: 1,
       };
     });
@@ -33,9 +48,10 @@ export function useStory({ profile, cards }: UseStoryOptions) {
   const goPrev = useCallback(() => {
     setState((prev) => {
       if (prev.currentIndex <= 0) return prev;
+      const nextIndex = prev.currentIndex - 1;
       return {
         ...prev,
-        currentIndex: prev.currentIndex - 1,
+        currentIndex: nextIndex,
         direction: -1,
       };
     });
@@ -49,6 +65,11 @@ export function useStory({ profile, cards }: UseStoryOptions) {
     }));
   }, [totalCards]);
 
+  // Notify parent when card changes
+  useEffect(() => {
+    onCardChange?.(state.currentIndex, totalCards);
+  }, [state.currentIndex, totalCards, onCardChange]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ') {
@@ -57,11 +78,14 @@ export function useStory({ profile, cards }: UseStoryOptions) {
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         goPrev();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        onExit?.();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goNext, goPrev]);
+  }, [goNext, goPrev, onExit]);
 
   return {
     ...state,
@@ -69,6 +93,7 @@ export function useStory({ profile, cards }: UseStoryOptions) {
     goNext,
     goPrev,
     goTo,
+    prefersReducedMotion,
     progress: (state.currentIndex + 1) / totalCards,
   };
 }

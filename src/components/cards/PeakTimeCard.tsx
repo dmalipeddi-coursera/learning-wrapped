@@ -55,12 +55,16 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
   }, [hourlyData, profile.peakHour]);
 
   const hourMarkers = useMemo(() => {
-    return [0, 6, 12, 18].map((hour) => {
+    return [0, 3, 6, 9, 12, 15, 18, 21].map((hour) => {
       const angle = (hour / 24) * Math.PI * 2 - Math.PI / 2;
-      const x = CENTER + Math.cos(angle) * (MARKER_RADIUS + BAR_MAX + 16);
-      const y = CENTER + Math.sin(angle) * (MARKER_RADIUS + BAR_MAX + 16);
-      const labels: Record<number, string> = { 0: '12a', 6: '6a', 12: '12p', 18: '6p' };
-      return { hour, x, y, label: labels[hour] };
+      const x = CENTER + Math.cos(angle) * (MARKER_RADIUS + BAR_MAX + 18);
+      const y = CENTER + Math.sin(angle) * (MARKER_RADIUS + BAR_MAX + 18);
+      const labels: Record<number, string> = {
+        0: '12a', 3: '3a', 6: '6a', 9: '9a',
+        12: '12p', 15: '3p', 18: '6p', 21: '9p',
+      };
+      const isMajor = hour % 6 === 0;
+      return { hour, x, y, label: labels[hour], isMajor };
     });
   }, []);
 
@@ -90,10 +94,11 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
           transition={{ duration: 0.8, ease: 'easeOut' }}
         />
 
-        {/* Small tick marks for each hour */}
+        {/* Tick marks for each hour - major ticks at 0,6,12,18 */}
         {Array.from({ length: 24 }, (_, h) => {
           const angle = (h / 24) * Math.PI * 2 - Math.PI / 2;
-          const innerR = CLOCK_RADIUS - 4;
+          const isMajor = h % 6 === 0;
+          const innerR = CLOCK_RADIUS - (isMajor ? 8 : 4);
           const outerR = CLOCK_RADIUS;
           return (
             <line
@@ -102,8 +107,8 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
               y1={CENTER + Math.sin(angle) * innerR}
               x2={CENTER + Math.cos(angle) * outerR}
               y2={CENTER + Math.sin(angle) * outerR}
-              stroke="var(--cds-color-grey-600, #757575)"
-              strokeWidth="1"
+              stroke={isMajor ? 'var(--cds-color-grey-400, #9E9E9E)' : 'var(--cds-color-grey-600, #757575)'}
+              strokeWidth={isMajor ? 1.5 : 1}
             />
           );
         })}
@@ -122,10 +127,12 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
               y2={bar.y2}
               stroke={
                 bar.isPeak
-                  ? 'var(--cds-color-blue-500, #3D82F3)'
-                  : 'var(--cds-color-grey-700, #616161)'
+                  ? 'var(--cds-color-blue-400, #5B9BF5)'
+                  : bar.value > 0.5
+                    ? 'var(--cds-color-grey-500, #9E9E9E)'
+                    : 'var(--cds-color-grey-600, #757575)'
               }
-              strokeWidth={bar.isPeak ? 4 : 3}
+              strokeWidth={bar.isPeak ? 4.5 : 3}
               strokeLinecap="round"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 1 }}
@@ -149,15 +156,26 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
             y={marker.y}
             textAnchor="middle"
             dominantBaseline="central"
-            fill="var(--cds-color-grey-500, #9E9E9E)"
-            fontSize="10"
-            fontWeight="500"
+            fill={marker.isMajor ? 'var(--cds-color-grey-300, #BDBDBD)' : 'var(--cds-color-grey-500, #9E9E9E)'}
+            fontSize={marker.isMajor ? '11' : '9'}
+            fontWeight={marker.isMajor ? '600' : '400'}
           >
             {marker.label}
           </text>
         ))}
 
-        {/* Peak indicator dot */}
+        {/* Glow filter for peak indicator */}
+        <defs>
+          <filter id="peak-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Peak indicator dot with glow */}
         {(() => {
           const angle = (profile.peakHour / 24) * Math.PI * 2 - Math.PI / 2;
           const barLength = BAR_MIN + (hourlyData[profile.peakHour] ?? 0) * BAR_MAX;
@@ -167,13 +185,22 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
             <motion.circle
               cx={cx}
               cy={cy}
-              r="3"
+              r="5"
               fill="var(--cds-color-blue-400, #5B9BF5)"
+              filter="url(#peak-glow)"
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={{ scale: [1, 1.3, 1], opacity: 1 }}
               transition={{
-                duration: 0.3,
-                delay: 0.5 + TOTAL_BAR_ANIM_DURATION + 0.1,
+                scale: {
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 0.5 + TOTAL_BAR_ANIM_DURATION + 0.1,
+                },
+                opacity: {
+                  duration: 0.3,
+                  delay: 0.5 + TOTAL_BAR_ANIM_DURATION + 0.1,
+                },
               }}
             />
           );

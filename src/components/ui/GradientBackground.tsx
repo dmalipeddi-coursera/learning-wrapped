@@ -38,8 +38,8 @@ export default function GradientBackground({
   }, [particles]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="absolute inset-0" style={{ background: gradient }} />
+    <div className="absolute inset-0 overflow-hidden rounded-[inherit]" aria-hidden="true">
+      <div className="absolute inset-0 rounded-[inherit]" style={{ background: gradient }} />
       {particles &&
         particleData.map((p) => (
           <motion.div

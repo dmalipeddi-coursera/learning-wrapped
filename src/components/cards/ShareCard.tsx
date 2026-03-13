@@ -166,7 +166,7 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
 
   return (
     <div
-      className="flex flex-col items-center justify-center w-full h-full relative overflow-hidden"
+      className="flex flex-col items-center justify-center w-full h-full relative overflow-hidden px-6"
       style={{ backgroundColor: 'var(--cds-color-grey-950, #0A0A0A)' }}
       role="region"
       aria-label="Your Learning Wrapped share card. Download or share your results."
@@ -177,8 +177,9 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
         id="share-card"
         className="relative overflow-hidden flex flex-col"
         style={{
-          width: 320,
-          height: 480,
+          width: 'min(290px, calc(100% - 32px))',
+          maxWidth: 290,
+          height: 440,
           borderRadius: 16,
           backgroundColor: '#FFFFFF',
           boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 8px 20px rgba(0,86,210,0.15)',

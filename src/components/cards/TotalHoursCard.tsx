@@ -85,6 +85,28 @@ export default function TotalHoursCard({ profile }: { profile: LearnerProfile })
       >
         hours of learning
       </motion.p>
+
+      {/* Relatable comparison */}
+      {isComplete && (
+        <motion.p
+          className="relative z-10 mt-6 text-center select-none px-8"
+          style={{
+            fontSize: 16,
+            color: 'var(--cds-color-grey-300, #BDBDBD)',
+            fontWeight: 400,
+            lineHeight: 1.5,
+          }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+        >
+          {profile.totalHours >= 100
+            ? `That's ${Math.round(profile.totalHours / 24)} full days of growth. More time than most people spend on New Year's resolutions all year.`
+            : profile.totalHours >= 40
+              ? `That's ${Math.round(profile.totalHours / 2)} movies worth of learning. Except you actually remember what happened.`
+              : `That's ${Math.round(profile.totalHours / 2)} flights from New York to LA, spent leveling up instead of watching seatback TV.`}
+        </motion.p>
+      )}
     </div>
   );
 }

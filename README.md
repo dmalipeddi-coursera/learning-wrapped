@@ -1,54 +1,81 @@
-# React + TypeScript + Vite
+# Learning Wrapped 2026
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Coursera Agentic Build Day Hackathon** | Theme: *Learning Shouldn't Feel Like Work*
 
-Currently, two official plugins are available:
+A Spotify Wrapped-style experience that turns a learner's annual Coursera activity into a personal, shareable story. Nine animated cards reveal stats, insights, and a learning personality, making reflection feel fun rather than like a report card.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Live Demo**: [dmalipeddi-coursera.github.io/learning-wrapped](https://dmalipeddi-coursera.github.io/learning-wrapped/)
 
-## Expanding the ESLint configuration
+## Why This Exists
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Year-end recaps work because they reframe data as a narrative. Spotify Wrapped doesn't show you a spreadsheet; it tells you a story. Learning Wrapped applies that same idea to education: instead of "you completed 9 courses," it says "Look what you built" and connects the dots between skills.
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+**How it maps to the theme:**
+- Stats are presented as personal insights, not metrics ("That's 6 full days of growth")
+- A learning personality quiz result (Night Owl, Early Bird, etc.) makes it feel personal
+- The Knowledge Constellation visualizes how skills connect, turning a course list into a journey
+- Shareable card at the end encourages social sharing, reinforcing that learning is something to celebrate
+
+## The Experience
+
+| Card | What it shows |
+|------|--------------|
+| Hook | Personalized greeting with the learner's name |
+| Total Hours | Animated counter with a relatable comparison |
+| Courses | Course list with colored category pills |
+| Peak Time | Radial clock showing when you learn best |
+| Constellation | Interactive skill graph showing topic connections |
+| Personality | Learning personality type with community stats |
+| Fun Stat | Quiz answers with a witty comparison |
+| Streak | GitHub-style activity heatmap |
+| Share | Downloadable/shareable summary card |
+
+## Tech Stack
+
+- **React 19** + **TypeScript** + **Vite 6**
+- **Tailwind CSS v4** with Coursera Design System (CDS) tokens
+- **Framer Motion 12** for all animations
+- **html-to-image** for shareable PNG export
+- **canvas-confetti** for celebration effects
+- **GitHub Pages** for deployment
+
+## Accessibility
+
+- Skip-to-content link
+- ARIA live region announces card changes to screen readers
+- Full keyboard navigation (arrow keys, Escape to exit)
+- `prefers-reduced-motion` disables all custom animations
+- Semantic HTML with proper roles and labels
+- Focus management when story starts
+
+## Running Locally
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Building and Deploying
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+npm run build      # Build to dist/
+npm run deploy     # Build + deploy to GitHub Pages
 ```
+
+## Project Structure
+
+```
+src/
+  components/
+    cards/          # 9 story cards (HookCard, TotalHoursCard, etc.)
+    story/          # StoryPlayer orchestrator
+    ui/             # ProgressDots, GradientBackground
+  data/             # Demo profiles, personality definitions
+  hooks/            # useStory, useAnimatedCounter
+  utils/            # Share image utilities
+  types.ts          # TypeScript interfaces
+```
+
+## Built With
+
+This project was built entirely during the Agentic Build Day hackathon using Claude Code as the AI pair programmer, from initial scaffold to final polish.

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { LearnerProfile } from '../../types';
 
-const NODE_BASE_RADIUS = 8;
+const NODE_BASE_RADIUS = 16;
 const SVG_PADDING = 40;
 
 interface ConnectionLine {
@@ -52,16 +52,29 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
   const totalLineAnimDuration = connections.length * 0.4 + 0.4;
   const lineStartDelay = totalNodeAnimDuration + 0.3;
 
+  // Find the largest node for pulse animation
+  const largestNodeId = useMemo(() => {
+    let maxSize = 0;
+    let id = nodes[0]?.id ?? '';
+    nodes.forEach((n) => {
+      if (n.size > maxSize) {
+        maxSize = n.size;
+        id = n.id;
+      }
+    });
+    return id;
+  }, [nodes]);
+
   // Build a readable journey string from first 3 nodes
   const journeyText = useMemo(() => {
     const labels = nodes.slice(0, 3).map((n) => n.label);
-    if (labels.length < 3) return `Your learning journey is building something.`;
-    return `From ${labels[0]} to ${labels[1]} to ${labels[2]}. You're building something.`;
+    if (labels.length < 3) return `Every skill you learned connects to the next.`;
+    return `${labels[0]} led to ${labels[1]}, which unlocked ${labels[2]}. Every skill connects.`;
   }, [nodes]);
 
   return (
     <div
-      className="flex flex-col items-center justify-center w-full h-full px-6 overflow-hidden relative"
+      className="flex flex-col items-center justify-center w-full h-full px-6 pt-16 pb-8 overflow-hidden relative"
       style={{
         background:
           'radial-gradient(ellipse at center, var(--cds-color-grey-900, #2A2A2A) 0%, var(--cds-color-grey-950, #1F1F1F) 70%)',
@@ -69,11 +82,22 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
       role="region"
       aria-label={`Your knowledge constellation: ${nodes.map((n) => n.label).join(', ')}`}
     >
+      {/* Title */}
+      <motion.h2
+        className="text-white text-center mb-4 select-none"
+        style={{ fontSize: 22, fontWeight: 700 }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        Your Knowledge Constellation
+      </motion.h2>
+
       {/* Constellation SVG */}
       <svg
         viewBox={`0 0 ${100 + SVG_PADDING * 2} ${100 + SVG_PADDING * 2}`}
-        className="w-full"
-        style={{ height: '60vh', maxHeight: '60vh' }}
+        className="w-full flex-1"
+        style={{ maxHeight: '50vh' }}
         aria-hidden="true"
       >
         {/* Connection lines */}
@@ -122,9 +146,29 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
           const r = NODE_BASE_RADIUS * node.size * 0.08;
           const nodeDelay = i * 0.2;
           const floatDelay = i * 0.5;
+          const isLargest = node.id === largestNodeId;
 
           return (
             <g key={node.id}>
+              {/* Pulse ring for largest node */}
+              {isLargest && linesComplete && (
+                <motion.circle
+                  cx={cx}
+                  cy={cy}
+                  r={r}
+                  fill="none"
+                  stroke="var(--cds-color-blue-400, #5B9BF5)"
+                  strokeWidth="0.6"
+                  initial={{ opacity: 0.6, scale: 1 }}
+                  animate={{ opacity: 0, scale: 2.5 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeOut',
+                  }}
+                />
+              )}
+
               {/* Node circle */}
               <motion.circle
                 cx={cx}
@@ -172,20 +216,20 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
                 r={r + 3}
                 fill="none"
                 stroke="var(--cds-color-blue-500, #3D82F3)"
-                strokeWidth="0.3"
+                strokeWidth="0.5"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.3 }}
+                animate={{ opacity: 0.4 }}
                 transition={{ duration: 0.4, delay: nodeDelay + 0.2 }}
               />
 
               {/* Node label */}
               <motion.text
                 x={cx}
-                y={cy + r + 6}
+                y={cy + r + 7}
                 textAnchor="middle"
                 dominantBaseline="hanging"
                 fill="white"
-                fontSize="4"
+                fontSize="4.5"
                 fontWeight="500"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

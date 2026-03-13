@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StoryPlayer from './components/story/StoryPlayer';
 import { demoProfile } from './data/demoProfiles';
@@ -46,6 +46,32 @@ function CourseraLogo() {
   );
 }
 
+function CourseraWordmark() {
+  return (
+    <svg
+      width="120"
+      height="18"
+      viewBox="0 0 120 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Coursera"
+      role="img"
+    >
+      <text
+        x="0"
+        y="14"
+        fill="rgba(255,255,255,0.4)"
+        fontFamily="var(--cds-font-family)"
+        fontSize="14"
+        fontWeight="600"
+        letterSpacing="0.08em"
+      >
+        COURSERA
+      </text>
+    </svg>
+  );
+}
+
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
@@ -66,19 +92,75 @@ const fadeUp = {
   },
 };
 
+const floatAnimation = {
+  y: [0, -8, 0],
+  transition: {
+    duration: 3,
+    repeat: Infinity,
+    ease: 'easeInOut',
+  },
+};
+
 export default function App() {
   const [started, setStarted] = useState(false);
+  const storyRegionRef = useRef<HTMLDivElement>(null);
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
+
+  const handleUnwrap = useCallback(() => {
+    setStarted(true);
+    setLiveAnnouncement('Learning story started. Use arrow keys to navigate between cards.');
+  }, []);
+
+  const handleExit = useCallback(() => {
+    setStarted(false);
+    setLiveAnnouncement('Returned to landing page.');
+  }, []);
+
+  const handleCardChange = useCallback((index: number, total: number) => {
+    const cardType = storyCards[index]?.type ?? '';
+    setLiveAnnouncement(
+      `Card ${index + 1} of ${total}: ${cardType.replace(/-/g, ' ')}`
+    );
+  }, []);
+
+  // Focus the story region when it mounts
+  useEffect(() => {
+    if (started && storyRegionRef.current) {
+      storyRegionRef.current.focus();
+    }
+  }, [started]);
 
   return (
     <div className="h-full w-full">
+      {/* Skip to content link */}
+      <a
+        href="#main-content"
+        className="skip-to-content"
+      >
+        Skip to content
+      </a>
+
+      {/* Screen reader announcements */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      >
+        {liveAnnouncement}
+      </div>
+
       <AnimatePresence mode="wait">
         {!started ? (
-          <motion.div
+          <motion.main
             key="landing"
-            className="flex h-full w-full items-center justify-center"
+            id="main-content"
+            className="landing-bg flex h-full w-full items-center justify-center"
             style={{ backgroundColor: 'var(--cds-color-blue-700)' }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.4 }}
+            role="main"
+            aria-label="Learning Wrapped landing page"
           >
             <motion.div
               className="flex flex-col items-center gap-6 px-8 text-center"
@@ -86,7 +168,10 @@ export default function App() {
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={fadeUp}>
+              <motion.div
+                variants={fadeUp}
+                animate={floatAnimation}
+              >
                 <CourseraLogo />
               </motion.div>
 
@@ -104,10 +189,17 @@ export default function App() {
                 Your {demoProfile.yearLabel} Learning Story
               </motion.p>
 
+              <motion.p
+                className="text-sm font-medium tracking-wide text-white/40"
+                variants={fadeUp}
+              >
+                Learning Shouldn't Feel Like Work
+              </motion.p>
+
               <motion.button
                 variants={fadeUp}
-                onClick={() => setStarted(true)}
-                className="mt-4 cursor-pointer rounded-full bg-white px-8 py-3 text-lg font-semibold transition-transform hover:scale-105 active:scale-95"
+                onClick={handleUnwrap}
+                className="unwrap-btn mt-4 cursor-pointer rounded-full px-8 py-3 text-lg font-semibold"
                 style={{ color: 'var(--cds-color-blue-700)' }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -115,17 +207,36 @@ export default function App() {
               >
                 Unwrap
               </motion.button>
+
+              {/* Coursera wordmark at the bottom */}
+              <motion.div
+                className="mt-8 opacity-40"
+                variants={fadeUp}
+              >
+                <CourseraWordmark />
+              </motion.div>
             </motion.div>
-          </motion.div>
+          </motion.main>
         ) : (
           <motion.div
             key="story"
+            id="main-content"
             className="h-full w-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            ref={storyRegionRef}
+            tabIndex={-1}
+            role="main"
+            aria-label="Learning story player"
+            style={{ outline: 'none' }}
           >
-            <StoryPlayer profile={demoProfile} cards={storyCards} />
+            <StoryPlayer
+              profile={demoProfile}
+              cards={storyCards}
+              onExit={handleExit}
+              onCardChange={handleCardChange}
+            />
           </motion.div>
         )}
       </AnimatePresence>

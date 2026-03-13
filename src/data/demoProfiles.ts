@@ -67,7 +67,7 @@ export const demoProfile: LearnerProfile = {
   monthlyBreakdown: [8, 12, 15, 18, 22, 14, 10, 16, 20, 8, 4, 0],
   streakCalendar: generateStreakCalendar(),
   topicConnections: constellationNodes,
-  funComparison: "That's more than most people text in a month.",
+  funComparison: "That's more clicks than a drummer in a jazz band. Your brain barely broke a sweat.",
   yearLabel: '2026',
 };
 
