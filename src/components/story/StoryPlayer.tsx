@@ -197,7 +197,7 @@ export default function StoryPlayer({ profile, cards, onExit, onCardChange }: St
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
       <div
-        className="noise-overlay phone-frame relative flex h-full w-full flex-col overflow-hidden md:h-[90vh] md:max-h-[860px] md:max-w-[428px] md:rounded-[40px]"
+        className="phone-frame relative flex h-full w-full flex-col overflow-hidden md:h-[90vh] md:max-h-[860px] md:max-w-[428px] md:rounded-[40px]"
         role="region"
         aria-label="Learning story player"
         aria-roledescription="story"

@@ -64,7 +64,8 @@ export default function TapZones({ onNext, onPrev }: TapZonesProps) {
             onPrev();
           }
         }}
-        className="pointer-events-auto absolute top-0 left-0 h-full w-[30%] cursor-pointer border-none bg-transparent outline-none focus-visible:bg-white/5"
+        className="pointer-events-auto absolute top-0 left-0 h-full w-[30%] cursor-pointer appearance-none border-0 bg-transparent p-0 outline-none focus-visible:bg-white/5"
+        style={{ border: 'none', outline: 'none', WebkitAppearance: 'none' }}
         aria-label="Previous story"
         tabIndex={0}
       />
@@ -78,7 +79,8 @@ export default function TapZones({ onNext, onPrev }: TapZonesProps) {
             onNext();
           }
         }}
-        className="pointer-events-auto absolute top-0 right-0 h-full w-[70%] cursor-pointer border-none bg-transparent outline-none focus-visible:bg-white/5"
+        className="pointer-events-auto absolute top-0 right-0 h-full w-[70%] cursor-pointer appearance-none border-0 bg-transparent p-0 outline-none focus-visible:bg-white/5"
+        style={{ border: 'none', outline: 'none', WebkitAppearance: 'none' }}
         aria-label="Next story"
         tabIndex={0}
       />
