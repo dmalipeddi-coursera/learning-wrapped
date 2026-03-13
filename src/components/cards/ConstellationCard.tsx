@@ -14,9 +14,37 @@ interface ConnectionLine {
   delay: number;
 }
 
+interface StarDot {
+  id: number;
+  cx: number;
+  cy: number;
+  r: number;
+  twinkle: boolean;
+  twinkleDelay: number;
+  twinkleDuration: number;
+}
+
 export default function ConstellationCard({ profile }: { profile: LearnerProfile }) {
   const nodes = profile.topicConnections;
   const [linesComplete, setLinesComplete] = useState(false);
+
+  // Background star dots
+  const starDots = useMemo<StarDot[]>(() => {
+    const twinkleIndices = new Set<number>();
+    while (twinkleIndices.size < 3) {
+      twinkleIndices.add(Math.floor(Math.random() * 14));
+    }
+
+    return Array.from({ length: 14 }, (_, i) => ({
+      id: i,
+      cx: 5 + Math.random() * (100 + SVG_PADDING * 2 - 10),
+      cy: 5 + Math.random() * (100 + SVG_PADDING * 2 - 10),
+      r: 0.3 + Math.random() * 0.5,
+      twinkle: twinkleIndices.has(i),
+      twinkleDelay: Math.random() * 3,
+      twinkleDuration: 2 + Math.random() * 2,
+    }));
+  }, []);
 
   // Build unique connection lines
   const connections = useMemo(() => {
@@ -65,12 +93,17 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
     return id;
   }, [nodes]);
 
-  // Build a readable journey string from first 3 nodes
+  // Build a readable journey string from first 3 nodes, split into words for stagger
   const journeyText = useMemo(() => {
     const labels = nodes.slice(0, 3).map((n) => n.label);
     if (labels.length < 3) return `Every skill you learned connects to the next.`;
     return `${labels[0]} led to ${labels[1]}, which unlocked ${labels[2]}. Every skill connects.`;
   }, [nodes]);
+
+  const journeyWords = journeyText.split(' ');
+
+  // Pick the first connection for the comet trail effect
+  const cometConnection = connections.length > 0 ? connections[0] : null;
 
   return (
     <div
@@ -100,6 +133,48 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
         style={{ maxHeight: '50vh' }}
         aria-hidden="true"
       >
+        <defs>
+          {/* Text glow filter for node labels */}
+          <filter id="text-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Background star dots */}
+        {starDots.map((star) =>
+          star.twinkle ? (
+            <motion.circle
+              key={`star-${star.id}`}
+              cx={star.cx}
+              cy={star.cy}
+              r={star.r}
+              fill="rgba(255, 255, 255, 0.5)"
+              animate={{
+                opacity: [0.3, 0.8, 0.3],
+                r: [star.r, star.r * 1.5, star.r],
+              }}
+              transition={{
+                duration: star.twinkleDuration,
+                delay: star.twinkleDelay,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          ) : (
+            <circle
+              key={`star-${star.id}`}
+              cx={star.cx}
+              cy={star.cy}
+              r={star.r}
+              fill="rgba(255, 255, 255, 0.3)"
+            />
+          )
+        )}
+
         {/* Connection lines */}
         {connections.map((conn, i) => {
           const isLast = i === connections.length - 1;
@@ -138,6 +213,34 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
             />
           );
         })}
+
+        {/* Comet trail on the first connection line */}
+        {cometConnection && linesComplete && (() => {
+          const x1 = cometConnection.x1 * 100 + SVG_PADDING;
+          const y1 = cometConnection.y1 * 100 + SVG_PADDING;
+          const x2 = cometConnection.x2 * 100 + SVG_PADDING;
+          const y2 = cometConnection.y2 * 100 + SVG_PADDING;
+
+          return (
+            <motion.circle
+              cx={x1}
+              cy={y1}
+              r="1.5"
+              fill="rgba(91, 155, 245, 0.8)"
+              animate={{
+                cx: [x1, x2, x1],
+                cy: [y1, y2, y1],
+                opacity: [0, 0.9, 0.9, 0],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                repeatDelay: 1,
+              }}
+            />
+          );
+        })()}
 
         {/* Nodes */}
         {nodes.map((node, i) => {
@@ -222,7 +325,7 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
                 transition={{ duration: 0.4, delay: nodeDelay + 0.2 }}
               />
 
-              {/* Node label */}
+              {/* Node label with text glow */}
               <motion.text
                 x={cx}
                 y={cy + r + 7}
@@ -231,6 +334,7 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
                 fill="white"
                 fontSize="4.5"
                 fontWeight="500"
+                filter="url(#text-glow)"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, delay: nodeDelay + 0.15 }}
@@ -242,23 +346,35 @@ export default function ConstellationCard({ profile }: { profile: LearnerProfile
         })}
       </svg>
 
-      {/* Journey text */}
-      <motion.p
-        className="text-center mt-6 select-none px-4"
-        style={{
-          fontSize: 16,
-          color: 'var(--cds-color-blue-300, #79A8F7)',
-          fontWeight: 400,
-          lineHeight: 1.6,
-        }}
-        initial={{ opacity: 0, y: 12 }}
-        animate={
-          linesComplete ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }
-        }
-        transition={{ duration: 0.8, ease: 'easeOut' }}
+      {/* Journey text - word by word fade in */}
+      <div
+        className="text-center mt-6 select-none px-4 flex flex-wrap justify-center gap-x-1"
+        style={{ lineHeight: 1.6 }}
       >
-        {journeyText}
-      </motion.p>
+        {journeyWords.map((word, i) => (
+          <motion.span
+            key={i}
+            style={{
+              fontSize: 16,
+              color: 'var(--cds-color-blue-300, #79A8F7)',
+              fontWeight: 400,
+            }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={
+              linesComplete
+                ? { opacity: 1, y: 0 }
+                : { opacity: 0, y: 6 }
+            }
+            transition={{
+              duration: 0.4,
+              delay: i * 0.1,
+              ease: 'easeOut',
+            }}
+          >
+            {word}
+          </motion.span>
+        ))}
+      </div>
     </div>
   );
 }

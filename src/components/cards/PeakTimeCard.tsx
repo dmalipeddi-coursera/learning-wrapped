@@ -8,7 +8,6 @@ import type { LearnerProfile } from '../../types';
  * Peaks around profile.peakHour and distributes the rest naturally.
  */
 function generateHourlyData(peakHour: number, monthlyBreakdown: number[]): number[] {
-  const totalActivity = monthlyBreakdown.reduce((sum, v) => sum + v, 0) || 1;
   const hours = Array.from({ length: 24 }, (_, h) => {
     // Distance from peak hour (wrapping around 24h)
     const dist = Math.min(Math.abs(h - peakHour), 24 - Math.abs(h - peakHour));
@@ -68,6 +67,11 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
     });
   }, []);
 
+  // Decorative radial gradient rings
+  const decorativeRings = useMemo(() => {
+    return [60, 80, 100].map((r) => ({ r, opacity: 0.03 + (r / 100) * 0.02 }));
+  }, []);
+
   return (
     <div
       className="flex flex-col items-center justify-center w-full h-full px-6 overflow-hidden"
@@ -81,6 +85,46 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
         className="w-full max-w-[280px] mx-auto"
         aria-hidden="true"
       >
+        <defs>
+          {/* Glow filter for peak bar */}
+          <filter id="peak-bar-glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          {/* Glow filter for peak indicator */}
+          <filter id="peak-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          {/* Radial gradient for decorative rings */}
+          <radialGradient id="ring-gradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(61,130,243,0.06)" />
+            <stop offset="100%" stopColor="rgba(61,130,243,0)" />
+          </radialGradient>
+        </defs>
+
+        {/* Decorative radial gradient rings */}
+        {decorativeRings.map((ring) => (
+          <circle
+            key={`deco-ring-${ring.r}`}
+            cx={CENTER}
+            cy={CENTER}
+            r={ring.r}
+            fill="none"
+            stroke="rgba(61,130,243,0.06)"
+            strokeWidth="0.5"
+            opacity={ring.opacity * 10}
+          />
+        ))}
+
         {/* Base circle */}
         <motion.circle
           cx={CENTER}
@@ -112,6 +156,31 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
             />
           );
         })}
+
+        {/* Soft glow behind peak bar */}
+        {(() => {
+          const peakBar = bars.find((b) => b.isPeak);
+          if (!peakBar) return null;
+          return (
+            <motion.line
+              x1={peakBar.x1}
+              y1={peakBar.y1}
+              x2={peakBar.x2}
+              y2={peakBar.y2}
+              stroke="rgba(91, 155, 245, 0.3)"
+              strokeWidth="10"
+              strokeLinecap="round"
+              filter="url(#peak-bar-glow)"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.6 }}
+              transition={{
+                duration: 0.3,
+                delay: 0.5 + (profile.peakHour / 24) * TOTAL_BAR_ANIM_DURATION,
+                ease: 'easeOut',
+              }}
+            />
+          );
+        })()}
 
         {/* Activity bars */}
         {bars.map((bar) => {
@@ -148,9 +217,9 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
           );
         })}
 
-        {/* Hour labels */}
-        {hourMarkers.map((marker) => (
-          <text
+        {/* Hour labels - fade in after bars complete */}
+        {hourMarkers.map((marker, i) => (
+          <motion.text
             key={`label-${marker.hour}`}
             x={marker.x}
             y={marker.y}
@@ -159,21 +228,17 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
             fill={marker.isMajor ? 'var(--cds-color-grey-300, #BDBDBD)' : 'var(--cds-color-grey-500, #9E9E9E)'}
             fontSize={marker.isMajor ? '11' : '9'}
             fontWeight={marker.isMajor ? '600' : '400'}
+            initial={{ opacity: 0 }}
+            animate={barsComplete ? { opacity: 1 } : { opacity: 0 }}
+            transition={{
+              duration: 0.3,
+              delay: i * 0.06,
+              ease: 'easeOut',
+            }}
           >
             {marker.label}
-          </text>
+          </motion.text>
         ))}
-
-        {/* Glow filter for peak indicator */}
-        <defs>
-          <filter id="peak-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
 
         {/* Peak indicator dot with glow */}
         {(() => {
@@ -207,7 +272,7 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
         })()}
       </svg>
 
-      {/* Description text */}
+      {/* Description text with personality badge */}
       <motion.p
         className="text-center mt-8 select-none px-4"
         style={{
@@ -221,7 +286,18 @@ export default function PeakTimeCard({ profile }: { profile: LearnerProfile }) {
         transition={{ duration: 0.7, ease: 'easeOut' }}
       >
         You&apos;re a{' '}
-        <span style={{ color: 'var(--cds-color-blue-300, #79A8F7)' }}>
+        <span
+          style={{
+            display: 'inline-block',
+            backgroundColor: 'rgba(61, 130, 243, 0.15)',
+            color: 'var(--cds-color-blue-300, #79A8F7)',
+            padding: '1px 10px',
+            borderRadius: 12,
+            fontSize: 18,
+            fontWeight: 600,
+            border: '1px solid rgba(91, 155, 245, 0.25)',
+          }}
+        >
           {profile.personality}
         </span>
         . Most active at{' '}

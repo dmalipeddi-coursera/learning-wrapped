@@ -5,6 +5,27 @@ import { downloadShareCard, shareCard } from '../../utils/shareImage';
 import { personalities } from '../../data/personality';
 
 /* ------------------------------------------------------------------ */
+/*  Inject keyframes for rotating gradient background                   */
+/* ------------------------------------------------------------------ */
+
+const shareStyleId = 'share-card-style';
+if (typeof document !== 'undefined' && !document.getElementById(shareStyleId)) {
+  const style = document.createElement('style');
+  style.id = shareStyleId;
+  style.textContent = `
+    @keyframes share-bg-rotate {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    @keyframes share-constellation-draw {
+      0% { stroke-dashoffset: 100; }
+      100% { stroke-dashoffset: 0; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Mini SVG Icons                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -67,7 +88,7 @@ function TrophyIcon() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Mini Constellation for card footer                                 */
+/*  Mini Constellation with animated connection lines                   */
 /* ------------------------------------------------------------------ */
 
 function MiniConstellation() {
@@ -86,16 +107,27 @@ function MiniConstellation() {
 
   return (
     <svg width="260" height="70" viewBox="0 0 260 70" fill="none" className="mx-auto">
-      {lines.map(([a, b], i) => (
-        <line
-          key={i}
-          x1={dots[a].x} y1={dots[a].y}
-          x2={dots[b].x} y2={dots[b].y}
-          stroke="var(--cds-color-blue-700, #0056D2)"
-          strokeWidth="1"
-          opacity="0.3"
-        />
-      ))}
+      {lines.map(([a, b], i) => {
+        const dx = dots[b].x - dots[a].x;
+        const dy = dots[b].y - dots[a].y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        return (
+          <line
+            key={i}
+            x1={dots[a].x} y1={dots[a].y}
+            x2={dots[b].x} y2={dots[b].y}
+            stroke="var(--cds-color-blue-700, #0056D2)"
+            strokeWidth="1"
+            opacity="0.3"
+            strokeDasharray={length}
+            strokeDashoffset="0"
+            style={{
+              animation: `share-constellation-draw 1s ease-out ${0.8 + i * 0.15}s both`,
+              strokeDashoffset: length,
+            }}
+          />
+        );
+      })}
       {dots.map((d, i) => (
         <circle
           key={i}
@@ -123,9 +155,11 @@ function StatItem({ icon, value, label, delay }: StatItemProps) {
   return (
     <motion.div
       className="flex flex-col items-center gap-1 py-3"
+      style={{ transition: 'transform 0.2s ease' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
+      whileHover={{ scale: 1.08 }}
     >
       <div className="mb-1">{icon}</div>
       <span
@@ -171,6 +205,21 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
       role="region"
       aria-label="Your Learning Wrapped share card. Download or share your results."
     >
+      {/* Subtle rotating gradient background */}
+      <div
+        className="absolute"
+        style={{
+          width: 600,
+          height: 600,
+          top: '50%',
+          left: '50%',
+          background: 'conic-gradient(from 0deg, rgba(0,86,210,0.06), transparent, rgba(0,86,210,0.04), transparent)',
+          borderRadius: '50%',
+          animation: 'share-bg-rotate 30s linear infinite',
+          pointerEvents: 'none',
+        }}
+      />
+
       {/* The capturable share card */}
       <motion.div
         ref={cardRef}
@@ -183,24 +232,60 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
           borderRadius: 16,
           backgroundColor: '#FFFFFF',
           boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 8px 20px rgba(0,86,210,0.15)',
+          /* Gradient border via outline + box-shadow trick */
+          border: '2px solid transparent',
+          backgroundClip: 'padding-box',
+          outline: '2px solid rgba(0,86,210,0.2)',
+          outlineOffset: -2,
         }}
         initial={{ opacity: 0, y: 40, scale: 0.92 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       >
-        {/* Header */}
+        {/* Gradient border overlay (CSS-based, captured cleanly) */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 16,
+            padding: 2,
+            background: 'linear-gradient(135deg, rgba(0,86,210,0.3), rgba(59,130,246,0.1), rgba(0,86,210,0.3))',
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMaskComposite: 'xor',
+            maskComposite: 'exclude',
+            pointerEvents: 'none',
+            zIndex: 10,
+          }}
+        />
+
+        {/* Header with prominent year */}
         <motion.div
-          className="flex items-center gap-2 px-5 pt-5 pb-3"
+          className="flex items-center justify-between px-5 pt-5 pb-3"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.4 }}
         >
-          <GradCapIcon size={22} />
+          <div className="flex items-center gap-2">
+            <GradCapIcon size={22} />
+            <span
+              className="font-semibold"
+              style={{ fontSize: 14, color: 'var(--cds-color-blue-700, #0056D2)' }}
+            >
+              Learning Wrapped
+            </span>
+          </div>
           <span
-            className="font-semibold"
-            style={{ fontSize: 14, color: 'var(--cds-color-blue-700, #0056D2)' }}
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #0056D2 0%, #3B82F6 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              letterSpacing: '-0.02em',
+            }}
           >
-            Learning Wrapped {profile.yearLabel}
+            {profile.yearLabel}
           </span>
         </motion.div>
 
@@ -264,7 +349,7 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
           />
         </div>
 
-        {/* Mini constellation */}
+        {/* Mini constellation with animated lines */}
         <motion.div
           className="px-5 pb-2"
           initial={{ opacity: 0 }}
@@ -287,13 +372,14 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
         </motion.div>
       </motion.div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons with enhanced styling */}
       <motion.div
         className="flex items-center gap-3 mt-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.6, duration: 0.5, ease: 'easeOut' }}
       >
+        {/* Download button: outline with subtle glow */}
         <motion.button
           className="flex items-center justify-center rounded-lg cursor-pointer font-semibold"
           style={{
@@ -303,13 +389,15 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
             color: 'var(--cds-color-blue-700, #0056D2)',
             backgroundColor: 'transparent',
             fontSize: 15,
+            boxShadow: '0 0 12px rgba(0,86,210,0.15)',
           }}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(0,86,210,0.3)' }}
           whileTap={{ scale: 0.95 }}
           onClick={handleDownload}
         >
           Download
         </motion.button>
+        {/* Share button: solid blue with glow on hover */}
         <motion.button
           className="flex items-center justify-center rounded-lg cursor-pointer font-semibold"
           style={{
@@ -319,8 +407,9 @@ export default function ShareCard({ profile }: { profile: LearnerProfile }) {
             backgroundColor: 'var(--cds-color-blue-700, #0056D2)',
             color: '#FFFFFF',
             fontSize: 15,
+            boxShadow: '0 4px 16px rgba(0,86,210,0.3)',
           }}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.05, boxShadow: '0 4px 24px rgba(0,86,210,0.5)' }}
           whileTap={{ scale: 0.95 }}
           onClick={handleShare}
         >

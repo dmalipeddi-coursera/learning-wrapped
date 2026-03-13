@@ -52,6 +52,23 @@
   --cds-radius-lg: 16px;
   --cds-radius-xl: 24px;
   --cds-radius-full: 9999px;
+
+  /* Premium shadow tokens */
+  --shadow-glow-sm: 0 0 8px rgba(59, 130, 246, 0.15), 0 0 2px rgba(59, 130, 246, 0.1);
+  --shadow-glow-md: 0 0 20px rgba(59, 130, 246, 0.2), 0 0 6px rgba(59, 130, 246, 0.15);
+  --shadow-glow-lg: 0 0 40px rgba(59, 130, 246, 0.25), 0 0 12px rgba(59, 130, 246, 0.2), 0 0 80px rgba(59, 130, 246, 0.1);
+
+  /* Typography scale */
+  --font-display-lg: 72px;
+  --font-display-md: 60px;
+  --font-display-sm: 48px;
+  --font-heading-lg: 36px;
+  --font-heading-md: 32px;
+  --font-heading-sm: 28px;
+  --font-body-lg: 18px;
+  --font-body-md: 16px;
+  --font-caption-lg: 14px;
+  --font-caption-sm: 12px;
 }
 
 *, *::before, *::after {
@@ -251,6 +268,90 @@ html, body, #root {
   100% { left: 100%; }
 }
 
+/* Noise texture overlay */
+.noise-overlay {
+  position: relative;
+}
+
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  z-index: 50;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  border-radius: inherit;
+}
+
+/* Glass card utility */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--cds-radius-lg);
+  box-shadow: var(--shadow-glow-sm);
+}
+
+/* Phone frame premium styling */
+.phone-frame {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(59, 130, 246, 0.08);
+}
+
+/* Floating particles */
+@keyframes particle-drift {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(10px, -20px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-5px, -35px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translate(15px, -15px);
+    opacity: 0.7;
+  }
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: particle-drift 12s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Scroll indicator pulse */
+@keyframes scroll-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(6px);
+  }
+}
+
+.scroll-indicator {
+  animation: scroll-pulse 2s ease-in-out infinite;
+}
+
 /* Disable landing and button animations for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .landing-bg::before {
@@ -262,5 +363,14 @@ html, body, #root {
   .unwrap-btn::after {
     animation: none;
     display: none;
+  }
+
+  .particle {
+    animation: none;
+    opacity: 0;
+  }
+
+  .scroll-indicator {
+    animation: none;
   }
 }

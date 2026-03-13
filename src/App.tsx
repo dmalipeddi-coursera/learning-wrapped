@@ -93,9 +93,10 @@ const fadeUp = {
 };
 
 const floatAnimation = {
-  y: [0, -8, 0],
+  y: [0, -10, 0],
+  rotate: [0, 3, -3, 0],
   transition: {
-    duration: 3,
+    duration: 4,
     repeat: Infinity,
     ease: 'easeInOut',
   },
@@ -162,6 +163,13 @@ export default function App() {
             role="main"
             aria-label="Learning Wrapped landing page"
           >
+            {/* Floating background particles */}
+            <div className="particle" style={{ top: '15%', left: '12%', animationDelay: '0s', animationDuration: '14s' }} aria-hidden="true" />
+            <div className="particle" style={{ top: '25%', right: '18%', animationDelay: '2s', animationDuration: '11s', width: 2, height: 2 }} aria-hidden="true" />
+            <div className="particle" style={{ bottom: '30%', left: '22%', animationDelay: '4s', animationDuration: '16s' }} aria-hidden="true" />
+            <div className="particle" style={{ top: '60%', right: '10%', animationDelay: '6s', animationDuration: '13s', width: 2, height: 2 }} aria-hidden="true" />
+            <div className="particle" style={{ bottom: '15%', left: '65%', animationDelay: '3s', animationDuration: '15s' }} aria-hidden="true" />
+
             <motion.div
               className="flex flex-col items-center gap-6 px-8 text-center"
               variants={staggerContainer}
@@ -176,14 +184,14 @@ export default function App() {
               </motion.div>
 
               <motion.h1
-                className="text-4xl font-bold tracking-tight text-white sm:text-5xl"
+                className="text-5xl font-bold tracking-tight text-white sm:text-6xl"
                 variants={fadeUp}
               >
                 Hey, {demoProfile.name}
               </motion.h1>
 
               <motion.p
-                className="text-lg text-white/70"
+                className="text-xl font-medium tracking-tight text-white/80 sm:text-2xl"
                 variants={fadeUp}
               >
                 Your {demoProfile.yearLabel} Learning Story
@@ -199,18 +207,36 @@ export default function App() {
               <motion.button
                 variants={fadeUp}
                 onClick={handleUnwrap}
-                className="unwrap-btn mt-4 cursor-pointer rounded-full px-8 py-3 text-lg font-semibold"
-                style={{ color: 'var(--cds-color-blue-700)' }}
-                whileHover={{ scale: 1.05 }}
+                className="unwrap-btn mt-6 cursor-pointer rounded-full px-12 py-4 text-xl font-bold"
+                style={{
+                  color: 'var(--cds-color-blue-700)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
+                }}
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: '0 8px 40px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.2) inset, 0 0 60px rgba(59, 130, 246, 0.15)',
+                }}
                 whileTap={{ scale: 0.95 }}
                 aria-label="Start your learning story"
               >
                 Unwrap
               </motion.button>
 
+              {/* Tap to begin indicator */}
+              <motion.div
+                className="scroll-indicator mt-4 flex flex-col items-center gap-1"
+                variants={fadeUp}
+                aria-hidden="true"
+              >
+                <span className="text-xs font-medium tracking-widest text-white/30 uppercase">Tap to begin</span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-white/30">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </motion.div>
+
               {/* Coursera wordmark at the bottom */}
               <motion.div
-                className="mt-8 opacity-40"
+                className="mt-4 opacity-40"
                 variants={fadeUp}
               >
                 <CourseraWordmark />

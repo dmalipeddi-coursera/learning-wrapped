@@ -1,10 +1,12 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { LearnerProfile, LearningPersonality } from '../../types';
 import { personalities } from '../../data/personality';
 
 const DRAW_DURATION = 1.5;
 const FILL_DELAY = DRAW_DURATION;
 const FILL_DURATION = 0.3;
+const FLASH_DELAY = FILL_DELAY + FILL_DURATION;
 
 const strokeAnimation = {
   hidden: { pathLength: 0, opacity: 0 },
@@ -22,6 +24,53 @@ const fillAnimation = {
     transition: { delay: FILL_DELAY, duration: FILL_DURATION, ease: 'easeOut' },
   },
 };
+
+/* ------------------------------------------------------------------ */
+/*  Floating Particles                                                  */
+/* ------------------------------------------------------------------ */
+
+function FloatingParticles() {
+  const particles = Array.from({ length: 12 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: 2 + Math.random() * 4,
+    delay: Math.random() * 3,
+    duration: 4 + Math.random() * 4,
+  }));
+
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{
+            width: p.size,
+            height: p.size,
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            backgroundColor: 'rgba(255,255,255,0.15)',
+          }}
+          animate={{
+            y: [-10, -30, -10],
+            opacity: [0.1, 0.4, 0.1],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  SVG Illustrations                                                   */
+/* ------------------------------------------------------------------ */
 
 function NightOwlSVG() {
   return (
@@ -304,10 +353,39 @@ const PERSONALITY_RARITY: Record<LearningPersonality, number> = {
   'Steady Learner': 25,
 };
 
+/* ------------------------------------------------------------------ */
+/*  Shimmer keyframes (CSS injected once)                               */
+/* ------------------------------------------------------------------ */
+
+const shimmerStyleId = 'personality-shimmer-style';
+if (typeof document !== 'undefined' && !document.getElementById(shimmerStyleId)) {
+  const style = document.createElement('style');
+  style.id = shimmerStyleId;
+  style.textContent = `
+    @keyframes personality-shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export default function PersonalityCard({ profile }: { profile: LearnerProfile }) {
   const personalityInfo = personalities[profile.personality];
   const SVGComponent = personalitySVGs[profile.personality];
   const rarityPercent = PERSONALITY_RARITY[profile.personality];
+
+  const [showFlash, setShowFlash] = useState(false);
+  const [drawComplete, setDrawComplete] = useState(false);
+
+  useEffect(() => {
+    const flashTimer = setTimeout(() => {
+      setShowFlash(true);
+      setDrawComplete(true);
+    }, FLASH_DELAY * 1000);
+
+    return () => clearTimeout(flashTimer);
+  }, []);
 
   return (
     <div
@@ -318,6 +396,9 @@ export default function PersonalityCard({ profile }: { profile: LearnerProfile }
       role="region"
       aria-label={`Your learning personality: ${profile.personality}. ${personalityInfo.description}`}
     >
+      {/* Floating particles */}
+      <FloatingParticles />
+
       {/* Subtle radial glow */}
       <div
         className="absolute"
@@ -332,23 +413,49 @@ export default function PersonalityCard({ profile }: { profile: LearnerProfile }
         }}
       />
 
-      {/* SVG illustration */}
+      {/* Flash reveal effect */}
+      <AnimatePresence>
+        {showFlash && (
+          <motion.div
+            className="absolute inset-0 z-20"
+            style={{ backgroundColor: 'rgba(255,255,255,0.6)', pointerEvents: 'none' }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* SVG illustration with gentle float after draw */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
+        animate={
+          drawComplete
+            ? { opacity: 1, y: [0, -6, 0] }
+            : { opacity: 1, y: 0 }
+        }
+        transition={
+          drawComplete
+            ? { y: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, duration: 0.6, ease: 'easeOut' }
+            : { duration: 0.6, ease: 'easeOut' }
+        }
         className="relative z-10 mb-8"
       >
         <SVGComponent />
       </motion.div>
 
-      {/* Personality name */}
+      {/* Personality name with scale-up badge reveal */}
       <motion.h2
         className="text-white text-center relative z-10 select-none"
         style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.3 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: DRAW_DURATION + FILL_DURATION, duration: 0.5, ease: 'easeOut' }}
+        initial={{ opacity: 0, y: 20, scale: 0.8 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{
+          delay: DRAW_DURATION + FILL_DURATION,
+          duration: 0.6,
+          ease: [0.34, 1.56, 0.64, 1],
+        }}
       >
         {profile.personality}
       </motion.h2>
@@ -364,7 +471,7 @@ export default function PersonalityCard({ profile }: { profile: LearnerProfile }
         {personalityInfo.description}
       </motion.p>
 
-      {/* Rarity badge */}
+      {/* Rarity badge with shimmer */}
       <motion.div
         className="relative z-10 mt-5 select-none"
         style={{
@@ -375,12 +482,25 @@ export default function PersonalityCard({ profile }: { profile: LearnerProfile }
           borderRadius: 20,
           backgroundColor: 'rgba(255,255,255,0.12)',
           backdropFilter: 'blur(8px)',
+          overflow: 'hidden',
         }}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: DRAW_DURATION + FILL_DURATION + 0.5, duration: 0.4, ease: 'easeOut' }}
       >
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+        {/* Shimmer overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
+            backgroundSize: '200% 100%',
+            animation: 'personality-shimmer 3s ease-in-out infinite',
+            pointerEvents: 'none',
+          }}
+        />
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', position: 'relative' }}>
           You + {rarityPercent}% of learners
         </span>
       </motion.div>
